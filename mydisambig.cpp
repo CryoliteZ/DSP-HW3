@@ -15,13 +15,11 @@ Vocab voc;
 Ngram lm( voc, ngram_order );
 int TEST_DATA_LENGTH = 50;
 
-string articles[50][512];
+string articles[100][512];
 vector<vector <string> > vec (50);
 vector <vector <string> > ans(50);
+vector <vector <string> > correctSeq(50);
 
-string PhoneticList[37] = {"ㄅ","ㄆ","ㄇ","ㄈ","ㄉ","ㄊ","ㄋ","ㄌ","ㄍ","ㄎ","ㄏ","ㄐ","ㄑ","ㄒ","ㄓ","ㄔ","ㄕ","ㄖ","ㄗ","ㄘ","ㄙ","ㄧ","ㄨ","ㄩ","ㄛ","ㄜ","ㄝ","ㄞ","ㄟ","ㄠ","ㄡ","ㄢ","ㄣ","ㄤ","ㄥ","ㄦ"};
-
-string pList = "ㄅㄆㄇㄈㄉㄊㄋㄌㄍㄎㄏㄐㄑㄒㄓㄔㄕㄖㄗㄘㄙㄧㄨㄩㄛㄜㄝㄞㄟㄠㄡㄢㄣㄤㄥㄦ";
 // Get P(W2 | W1) -- bigram
 double getBigramProb(const char *w1, const char *w2)
 {
@@ -65,117 +63,184 @@ int main(int argc, char *argv[])
     // split string to vec
     for(int i = 0; i < TEST_DATA_LENGTH; ++i){
         string s = lines[i];
-        string delimiter =  "  ";
+        vec[i].push_back("<s>");
+        // const char *cstr = s.c_str();
+        // cout << strlen(cstr);
+        // for(int j = 0; )
+        string delimiter =  " ";
         size_t pos = 0;
         string token;
         int unit = 0;
         while ((pos = s.find(delimiter)) != std::string::npos) {
+          
             token = s.substr(0, pos);
-            // articles[i][unit] = token;
-            // unit ++;
-            vec[i].push_back(token);
+            // cout << token.length() << "/";
+            if(token.length() == 2)
+                vec[i].push_back(token);
             s.erase(0, pos + delimiter.length());
         }
+         vec[i].push_back("</s>");
+
         
     }
-    
-    // viterbi throughout the sequences
-     for(int i = 0; i < TEST_DATA_LENGTH; ++i){
+    for(int i = 0; i < TEST_DATA_LENGTH; ++i){
         
         for(int j = 0; j < vec[i].size(); ++j){
-            // word unit
-            vector <string>  word;
+            fs << vec[i][j];
+        }
+        fs << endl;
+    }
+
+    
+    // viterbi throughout the sequences
+     for(int m = 0; m < TEST_DATA_LENGTH; ++m){
+        vector<vector <double> > score (vec[m].size()) ;   
+        vector<vector <int> > path (vec[m].size()) ;     
+        for(int t = 1; t < vec[m].size(); ++t){          
            
-            string s = vec[i][j];           
+                
+            string preWords = mMap[vec[m][t-1]];
+            string curWords = mMap[vec[m][t]]; 
+           
+            if(t - 1 == 0) preWords = "<s>";
+            if(t == vec[m].size() -1) curWords = "</s>";
+            // fs << "上一個字：" << vec[m][t-1] << endl;
+             
+            // fs << "目前的字:" << vec[m][t];
+            // fs << endl;
+            // fs << preWords.length() << preWords << endl;
+            // fs << curWords.length() << curWords << endl;
+
+            // split preWords 
+            vector <string> preW;
             string delimiter =  " ";
             size_t pos = 0;
             string token;          
-            while ((pos = s.find(delimiter)) != std::string::npos) {
-                token = s.substr(0, pos);             
-                word.push_back(token);
-                s.erase(0, pos + delimiter.length());
+            while ((pos = preWords.find(delimiter)) != std::string::npos) {
+                token = preWords.substr(0, pos);
+                if(token.length() == 2)           
+                    preW.push_back(token);
+                preWords.erase(0, pos + delimiter.length());
             }
-            word.push_back(s);
+            preW.push_back(preWords);
+           
 
-            // done spliiting words        
-            for(int k = 1; k < word.size(); ++k){                              
-                string candidates = mMap[word[k]]; 
-                if(candidates.length() == 3){
-                     if(k == 1){
-                         fs << word[k] << " " << getBigramProb( "", word[k].c_str()) << "#";                         
-                     }
-                     else{
-                        fs << word[k] << " " << getBigramProb( ans[i].back().c_str(),word[k].c_str()) << "#";
-                     }
-                     
-                     ans[i].push_back(word[k]);
-                }
-                   
-                else{
-                    vector <string>  c;
-                    // split the candidats
-                    string s = candidates;
-                    string delimiter =  " ";
-                    size_t pos = 0;
-                    string token;          
-                    while ((pos = s.find(delimiter)) != std::string::npos) {
-                        token = s.substr(0, pos);             
-                        c.push_back(token);
-                        s.erase(0, pos + delimiter.length());
-                    }
-                    c.push_back(s);
-
-
-                    double maxP = -111;
-                    int flag = 0;
-                    for(int t = 1; t < c.size(); ++t){ 
-                        double p;
-                        if(k == 1){
-                            p = getBigramProb( "", c[t].c_str());                        
-                        }
-                        else{
-                           p = getBigramProb( ans[i].back().c_str(),c[t].c_str());
-                        }                        
-                        if( p >= maxP && p <= -1.0001){
-                            maxP = p;
-                            flag = t;
-                        }                       
-                    }
-                    fs << c[flag] << " " << maxP << "#";
-                    ans[i].push_back(c[flag]);
-
-
-                   
-                }
-               
-                               
+            // split curWords 
+            vector <string> curW;
+            delimiter =  " ";
+            pos = 0;                   
+            while ((pos = curWords.find(delimiter)) != std::string::npos) {
+                token = curWords.substr(0, pos);
+                if(token.length() == 2)           
+                    curW.push_back(token);
+                curWords.erase(0, pos + delimiter.length());
             }
-            fs << endl;
+            curW.push_back(curWords);
+
+          
             
-            ans[i].push_back(" ");     
+
+            // first word ( t == 1)           
+            if(t == 1){
+                for(int k = 0; k < curW.size(); ++k){
+                    // cout << getBigramProb("<s>", curW[k].c_str());
+                    score[t].push_back(getBigramProb("<s>", curW[k].c_str())); 
+                    path[t].push_back(0);
+                }
+                // fs << score[1].size();
+            }
+            else{                
+               
+                
+                for(int i = 0; i < curW.size(); ++i){   
+                      // do biagram viterbi                    
+                    int preFlag = 0;
+                    int curFlag = 0;
+                    double maxP = -10000;
+                    for(int j = 0; j < preW.size(); ++j){
+                        double p = 0.0;
+                        
+                        p = score[t-1][j] + getBigramProb(preW[j].c_str(), curW[i].c_str());
+                        // cout << i << " " << j << endl;
+                        // fs << " Pre " <<  preW[j].c_str() << " " << " Cur " << curW[i] << " " << getBigramProb(preW[j].c_str(), curW[i].c_str());
+                        // fs << " PreWord Score " << score[t-1][j] << " combine score " << p << endl;
+                        if(p > maxP && p < 0){
+                            maxP = p;
+                            curFlag = i;
+                            preFlag = j;
+                        }
+                        
+                    }
+                    // fs << preW[preFlag] << curW[curFlag] << maxP << endl;
+                    score[t].push_back(maxP);
+                    path[t].push_back(preFlag);
+                    // fs << endl;
+                }            
+                
+
+            }            
+            // fs << t << " loop done" << endl;
+              
+   
+        }
+        
+        int preidx = 0;
+        int curidx = 0;
+        // backtracking
+        for(int t = vec[m].size()-1; t >= 1; --t){
+
+            curidx = preidx;
+
+            string preWords = mMap[vec[m][t-1]];
+            string curWords = mMap[vec[m][t]]; 
+
+            if(t - 1 == 0) preWords = "<s>";
+            if(t == vec[m].size() -1) curWords = "</s>";
+            // split curWords 
+            vector <string> curW;
+            string delimiter =  " ";
+            size_t pos = 0;
+            string token;                        
+            while ((pos = curWords.find(delimiter)) != std::string::npos) {
+                token = curWords.substr(0, pos);
+                if(token.length() == 2)           
+                    curW.push_back(token);
+                curWords.erase(0, pos + delimiter.length());
+            }
+            curW.push_back(curWords);
+
+            // split preWords 
+            vector <string> preW;
+            delimiter =  " ";
+            pos = 0;                   
+            while ((pos = preWords.find(delimiter)) != std::string::npos) {
+                token = preWords.substr(0, pos);
+                if(token.length() == 2)           
+                    preW.push_back(token);
+                preWords.erase(0, pos + delimiter.length());
+            }
+            preW.push_back(preWords);
+
+            correctSeq[m].push_back(curW[curidx]);
+            preidx = path[t][curidx];
+        }
+        correctSeq[m].push_back("<s>");
+        for(int i = correctSeq[m].size()-1; i >=0; --i){
+            fs << correctSeq[m][i];
         }
         fs << endl;
         
     }
 
-    for(int i = 0; i < TEST_DATA_LENGTH; ++i){
-        for(int j = 0; j < ans[i].size(); ++j){
-            fs << ans[i][j];
-        }
-        fs << endl;
-    }
+  
 
 
 
-   
-    
-
-
-
-    double x = getBigramProb("立","委");
+    double x = getBigramProb("明","天");
     cout << x;
-  
-  
+    cout << getBigramProb("美","天");
+    cout << getBigramProb("在","美");
+    cout << getBigramProb("在","明");
 
     return 0;
 }
@@ -199,12 +264,14 @@ void loadMap(char* file){
     int t = 0;
     while(getline(inFile, line)){   
       int pos = line.find(" ");
-      string key =  line.substr(0, pos);  
-      line = line.erase(0,pos);
-      string value = line;
+      string key =  line.substr(0, pos); 
+         
+      line = line.erase(0,pos+1);
+      string value = line;  
       
       mMap[key] = value;     
-    }    
+    }
+
     return;
 }
 
