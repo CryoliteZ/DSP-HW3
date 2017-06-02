@@ -1,7 +1,7 @@
 # The following two variable will be commandline determined by TA
 # For testing, you could uncomment them.
-SRIPATH = /home/alvin/Project/DSP/DSP-HW3/srilm-1.5.10
-MACHINE_TYPE=i686-m64
+# SRIPATH = /home/alvin/Project/DSP/DSP-HW3/srilm-1.5.10
+# MACHINE_TYPE=i686-m64
 LM = bigram.lm
 
 CXX = g++

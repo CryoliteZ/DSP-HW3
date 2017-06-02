@@ -1,8 +1,12 @@
 # coding=big5
 import codecs
+import sys
 
 path = 'Big5-ZhuYin.map'
 path2 = 'ZhuYin-Big5.map'
+
+path = sys.argv[1]
+path2 = sys.argv[2]
 
 d = dict()
 with codecs.open(path, "r",encoding='big5', errors='ignore') as fdata:
@@ -32,4 +36,3 @@ with codecs.open(path2, "w",encoding='big5', errors='ignore') as f:
             else:
                 f.write(word + '\n')     
 
-# print(d['ㄇ'])

@@ -1,8 +1,8 @@
 # The following two variable will be commandline determined by TA
 # For testing, you could uncomment them.
-SRIPATH ?= /data/DSP_HW3/103_2/srilm-1.5.10
-MACHINE_TYPE ?= i686-m64
-LM ?= bigram.lm
+SRIPATH = /home/alvin/Project/DSP/DSP-HW3/srilm-1.5.10
+MACHINE_TYPE=i686-m64
+LM = bigram.lm
 
 CXX = g++
 CXXFLAGS = -O3 -I$(SRIPATH)/include -w
@@ -31,6 +31,7 @@ run:
 map:
         @#TODO How to map?
         @echo "Mapping!"
+        @python bigtomap.py Big5-ZhuYin.map ZhuYin-Big5.map
         @#./mapping $(FROM) $(TO)
         @#matlab mapping.m $(FROM) $(TO)
         @#python mapping.py $(FROM) $(TO)
